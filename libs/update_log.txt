@@ -1,0 +1,12 @@
+---------------------------------------------------------------------------------------------------------
+20260126:更新MPP版本到f5b48c35f77322c20113a8c05aa2d250adb66c3c
+
+commit f5b48c35f77322c20113a8c05aa2d250adb66c3c
+Author: Xiaoxu Chen <xiaoxu.chen@rock-chips.com>
+Date:   Fri Dec 19 16:31:53 2025 +0800
+
+    feat[mpp_enc_args]: Enc test args object implement
+
+    Change-Id: Iaa3bf19e29a90741dff60ba4e3a0c967f09f8447
+    Signed-off-by: Xiaoxu Chen <xiaoxu.chen@rock-chips.com>
+---------------------------------------------------------------------------------------------------------
