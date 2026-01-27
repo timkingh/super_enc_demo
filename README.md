@@ -24,7 +24,7 @@ make -j
 
 ​        -fqc 24:40:25:41 -qc 33:20:45:21:46 -rc 5 -semode 2 -bps 0:1000000:1500000 -qpdd 0 -n 100 \
 
-​        -soc 1 -segmap_calc_en 1
+​        -soc 1 -segmap_calc_en 1 -fqc_v3 30:35:35:40 -dqp_v3 4:3:-2:-2 -bmap_qc 20:20:51:51
 
 
 
@@ -65,6 +65,12 @@ make -j
 **-fqc：**帧级QP约束，I帧最小帧级QP：I帧最大帧级QP：P帧最小帧级QP：P帧最大帧级QP
 
 **-qc：**块级QP约束，初始帧级QP：I帧最小块级QP：I帧最大块级QP：P帧最小块级QP：P帧最大块级QP
+
+**-fqc_v3：**超级编码3.0的帧级QP约束，最小前景帧级QP：最大前景帧级QP：最小背景帧级QP：最大背景帧级QP
+
+**-dqp_v3：**超级编码3.0中背景或前景相对当前帧级QP的delta qp，I帧前景delta qp：P帧前景delta qp：I帧背景delta qp：P帧背景delta qp。
+
+**-bmap_qc：**超级编码3.0中的块级QP约束，I帧最小块级QP：P帧最小块级QP：I帧最大块级QP：P帧最大块级QP。
 
 **-bps：**码率约束，目标码率：最小码率：最大码率
 
