@@ -92,5 +92,13 @@ make -j
 
 **-smart_en：**0 - 关闭smart， 1 - smart v1， 3 - smart v3。（与-rc重叠，暂不使用）
 
-**-nn_out：**NN分割映射结果的输出路径，用于功能调试，可以确认NPU检测的准确性。
+**-nn_out：**NN分割映射结果的输出路径，用于功能调试，可以确认NPU检测的准确性。+
+
+## 相关资料
+
+MPP demo：https://github.com/HermanChen/mpp
+
+NPU demo：https://github.com/airockchip/rknn_model_zoo
+
+RGA demo：https://github.com/airockchip/librga
 
