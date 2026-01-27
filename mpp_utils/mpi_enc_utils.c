@@ -974,8 +974,15 @@ MPP_RET mpi_enc_test_cmd_update_by_args(MpiEncTestArgs* cmd, int argc, char **ar
     /* mark option end */
     mpp_opt_add(opts, NULL);
     ret = mpp_opt_parse(opts, argc, argv);
+
     /* check essential parameter */
-    if (cmd->type <= MPP_VIDEO_CodingAutoDetect) {
+    if (cmd->run_type == RUN_JPEG_RKNN_MPP) {
+        mpp_err("run_type %d not support yet\n", cmd->run_type);
+        ret = MPP_NOK;
+    }
+
+    if ((cmd->type <= MPP_VIDEO_CodingAutoDetect) &&
+        (cmd->run_type >= RUN_YUV_RKNN && cmd->run_type <= RUN_YUV_RKNN_MPP)) {
         mpp_err("invalid type %d\n", cmd->type);
         ret = MPP_NOK;
     }

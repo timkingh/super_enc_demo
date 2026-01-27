@@ -133,6 +133,7 @@ MPP_RET super_enc_rknn_init(SuperEncCtx *sec)
         return ret;
     }
 
+    nn_ctx->run_type = sec->args->run_type;
     nn_ctx->scene_mode = sec->args->yolo_scene_mode;
     nn_ctx->fp_segmap = sec->fp_nn_out;
     nn_ctx->fp_rect = sec->fp_nn_dect_rect;

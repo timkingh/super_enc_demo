@@ -1162,12 +1162,9 @@ int init_post_process(RknnCtx *nn_ctx)
 {
     int ret = 0;
     TIMER timer;
-    // ret = loadLabelName(LABEL_NALE_TXT_PATH, labels);
-    // if (ret < 0)
-    // {
-    //     printf("Load %s failed!\n", LABEL_NALE_TXT_PATH);
-    //     return -1;
-    // }
+
+    if (nn_ctx->run_type <= 2) /* display rectangles for jpeg */
+        post_debug = POST_DBG_DETECT_RECT;
 
     nn_ctx->proto = (float *)calloc(1, PROTO_CHANNEL * PROTO_HEIGHT * PROTO_WEIGHT * sizeof(float));
     if (!nn_ctx->proto) {

@@ -152,6 +152,7 @@ typedef struct {
     float filterBoxes_by_nms[OBJ_NUMB_MAX_SIZE * 4];
     int cls_id[OBJ_NUMB_MAX_SIZE];
 
+    int run_type;
     int scene_mode; /* pick different class for different scene */
     int segmap_calc_en; /* 0 or 1, enable segmap calculation or not */
     FILE *fp_segmap;
