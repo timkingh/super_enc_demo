@@ -30,11 +30,11 @@ class TIMER{
 
         void print_time(char* str){
             // printf("%s", indent);
-            printf("%s use: %f ms\n", str, get_time());
+            printf("%s use: %0.2f ms\n", str, get_time());
         }
         void print_time(const char* str){
             // printf("%s", indent);
-            printf("%s use: %f ms\n", str, get_time());
+            printf("%s use: %0.2f ms\n", str, get_time());
         }
 
         float get_time(){

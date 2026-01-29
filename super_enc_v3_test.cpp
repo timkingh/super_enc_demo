@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 
         end_time = mpp_time();
         total_time += (float)(end_time - start_time) / 1000;
-        mpp_log("frame %d cost %f ms\n", sec->frame_count, (float)(end_time - start_time) / 1000);
+        mpp_log("frame %d cost %0.2f ms\n\n", sec->frame_count, (float)(end_time - start_time) / 1000);
     } while (++sec->frame_count < sec->args->frame_num);
 
 done:
@@ -209,7 +209,7 @@ done:
 
     super_enc_v3_test_deinit(sec);
 
-    mpp_log("super enc v3 test %d frame(s) is done in %f ms\n", sec->frame_count, total_time);
+    mpp_log("super enc v3 test %d frame(s) is done in %0.2f ms\n", sec->frame_count, total_time);
 
     return 0;
 }

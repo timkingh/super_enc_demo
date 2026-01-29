@@ -159,6 +159,7 @@ typedef struct MpiEncTestArgs_t {
     RK_U32              adjust_rect_coord;
     RK_U32              rect_to_segmap_en; /* rectangle to segment map flag */
     RK_U32              smart_en; /* 0 - disable, 1 - smart v1, 3 - smart v3 */
+    RK_U32              show_time; /* show time cost flag */
 } MpiEncTestArgs;
 
 #ifdef __cplusplus

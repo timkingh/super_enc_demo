@@ -155,6 +155,7 @@ typedef struct {
     int run_type;
     int scene_mode; /* pick different class for different scene */
     int segmap_calc_en; /* 0 or 1, enable segmap calculation or not */
+    int show_time_lvl;
     FILE *fp_segmap;
     FILE *fp_rect;
 } RknnCtx;

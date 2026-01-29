@@ -127,17 +127,18 @@ MPP_RET super_enc_rknn_init(SuperEncCtx *sec)
     object_map_result_list *om_results = &sec->om_results;
     image_buffer_t *image = &sec->src_image;
 
-    ret = (MPP_RET)init_yolov5_seg_model(sec->args->model_path, nn_ctx);
-    if (ret != MPP_OK) {
-        mpp_err_f("init yolov5 seg model failed\n");
-        return ret;
-    }
-
     nn_ctx->run_type = sec->args->run_type;
     nn_ctx->scene_mode = sec->args->yolo_scene_mode;
     nn_ctx->fp_segmap = sec->fp_nn_out;
     nn_ctx->fp_rect = sec->fp_nn_dect_rect;
     nn_ctx->segmap_calc_en = !sec->args->rect_to_segmap_en;
+    nn_ctx->show_time_lvl = sec->args->show_time;
+
+    ret = (MPP_RET)init_yolov5_seg_model(sec->args->model_path, nn_ctx);
+    if (ret != MPP_OK) {
+        mpp_err_f("init yolov5 seg model failed\n");
+        return ret;
+    }
 
     if (sec->args->run_type != RUN_JPEG_RKNN &&
         sec->args->run_type != RUN_JPEG_RKNN_MPP) {

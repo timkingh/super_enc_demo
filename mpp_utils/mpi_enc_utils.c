@@ -844,6 +844,19 @@ RK_S32 mpi_enc_opt_bmap_qc(void *ctx, const char *next)
     return 0;
 }
 
+RK_S32 mpi_enc_opt_show_time(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        cmd->show_time = atoi(next);
+        return 1;
+    }
+
+    mpp_err("invalid smart_en\n");
+    return 0;
+}
+
 static MppOptInfo enc_opts[] = {
     {"i",       "input_file",           "input frame file",                         mpi_enc_opt_i},
     {"o",       "output_file",          "output encoded bitstream file",            mpi_enc_opt_o},
@@ -892,6 +905,7 @@ static MppOptInfo enc_opts[] = {
     {"soc",     "SoC id",               "0 3576; 1 3588",                           mpi_enc_opt_soc_id},
     {"segmap_calc_en", "segmap_calc_en", "segmap_calc_en, 0:off 1:on",              mpi_enc_opt_segmap_calc_en},
     {"smart_en", "smart_en", "smart_en, 0:off 1:v1 3:v3",                           mpi_enc_opt_smart_en},
+    {"show_time", "show_time", "show time, 0, 1, 2",                                mpi_enc_opt_show_time},
 };
 
 static RK_U32 enc_opt_cnt = MPP_ARRAY_ELEMS(enc_opts);
@@ -1405,6 +1419,7 @@ MPP_RET mpi_enc_test_cmd_show_opt(MpiEncTestArgs* cmd)
     mpp_log("format     : %d\n", cmd->format);
     mpp_log("type       : %d\n", cmd->type);
     mpp_log("SoC        : %s\n", cmd->soc_id ? "RK3588" : "RK3576");
+    mpp_log("show_time  : %d\n", cmd->show_time);
 
     return MPP_OK;
 }

@@ -42,6 +42,9 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
 
     seg_dbg_func("enter\n");
 
+    if (nn_ctx->show_time_lvl >= 1)
+        seg_debug |= SEG_DBG_TIME;
+
     // Load RKNN Model
     model_len = read_data_from_file(model_path, &model);
     if (model == NULL) {
@@ -184,7 +187,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
         return ROCKIVA_RET_FAIL;
     }
     time_end = mpp_time();
-    seg_dbg_time("convert_image_with_letterbox time: %f ms\n", (float)(time_end - time_start) / 1000);
+    seg_dbg_time("convert_image_with_letterbox(RGA) time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
 
     // Set Input Data
     input->index = 0;
@@ -200,12 +203,12 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
         return ROCKIVA_RET_FAIL;
     }
     time_end = mpp_time();
-    seg_dbg_time("rknn_inputs_set time: %f ms\n", (float)(time_end - time_start) / 1000);
+    seg_dbg_time("rknn_inputs_set time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
 
     time_start = mpp_time();
     ret = rknn_run(nn_ctx->rknn_ctx, NULL);
     time_end = mpp_time();
-    seg_dbg_time("rknn_run time: %f ms\n", (float)(time_end - time_start) / 1000);
+    seg_dbg_time("rknn_run time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
 
     if (!use_dma32_buf && dst_img.virt_addr != NULL) {
         free(dst_img.virt_addr);
@@ -218,7 +221,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
         return ROCKIVA_RET_FAIL;
     }
     time_end = mpp_time();
-    seg_dbg_time("rknn_outputs_get time: %f ms\n", (float)(time_end - time_start) / 1000);
+    seg_dbg_time("rknn_outputs_get time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
 
     SE_FREE(input);
     seg_dbg_func("leave\n");
@@ -242,13 +245,13 @@ RKYOLORetCode post_process_image(RknnCtx *nn_ctx, object_detect_result_list *od_
     time_start = mpp_time();
     calc_instance_mask(nn_ctx, outputs, &nn_ctx->letter_box, box_conf_threshold, nms_threshold, od_results);
     time_end = mpp_time();
-    seg_dbg_time("calc_instance_mask time: %f ms\n", (float)(time_end - time_start) / 1000);
+    seg_dbg_time("calc_instance_mask(postprocess) time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
 
     if (nn_ctx->segmap_calc_en) {
         time_start = mpp_time();
         trans_detect_result(nn_ctx, &nn_ctx->letter_box, od_results);
         time_end = mpp_time();
-        seg_dbg_time("trans_detect_result time: %f ms\n", (float)(time_end - time_start) / 1000);
+        seg_dbg_time("trans_detect_result(postprocess) time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
     }
 
 #endif
@@ -356,7 +359,7 @@ RKYOLORetCode seg_mask_to_class_map(RknnCtx *rknn_nn_ctx, object_detect_result_l
     }
 
     time_end = mpp_time();
-    seg_dbg_time("seg_mask_to_class_map time: %lld ms\n", (time_end - time_start) / 1000);
+    seg_dbg_time("seg_mask_to_class_map(postprocess) time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
     seg_dbg_func("leave\n");
 
     return ROCKIVA_RET_SUCCESS;

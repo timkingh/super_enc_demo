@@ -1164,7 +1164,9 @@ int init_post_process(RknnCtx *nn_ctx)
     TIMER timer;
 
     if (nn_ctx->run_type <= 2) /* display rectangles for jpeg */
-        post_debug = POST_DBG_DETECT_RECT;
+        post_debug |= POST_DBG_DETECT_RECT;
+    if (nn_ctx->show_time_lvl >= 2)
+        post_debug |= POST_DBG_TIME;
 
     nn_ctx->proto = (float *)calloc(1, PROTO_CHANNEL * PROTO_HEIGHT * PROTO_WEIGHT * sizeof(float));
     if (!nn_ctx->proto) {
