@@ -2,7 +2,7 @@
 
 ## 简介
 
-超级编码3.0是指引⼊AI感兴趣区域检测，编码器内部根据检测结果优化编码算法，提升编码质量。 ⽬前适配的AI模型包括检测模型yolov5和分割模型yolov5_seg，前者输出检测⽬标框，硬件开销较⼩，后者可以得到精准的内容分割结果，硬件开销较⼤。同等情况下，分割模型可以节省部分码率。根据AI检测结果，可以将图像内容区分为前景和背景。同时， AI检测的结果通过软件buffer的⽅式传递到编码器内部，因此现有接⼝可以兼容其他模型。 ⽀持该功能的平台为RK3588、 RK3576和RV1126B。  
+超级编码3.0是指引⼊AI感兴趣区域检测，编码器内部根据检测结果优化编码算法，提升编码质量。 ⽬前适配的AI模型包括检测模型**yolov5**、**yolov6**和分割模型**yolov5_seg**，前者输出检测⽬标框，硬件开销较⼩，后者可以得到精准的内容分割结果，硬件开销较⼤。同等情况下，分割模型可以节省部分码率。根据AI检测结果，可以将图像内容区分为前景和背景。同时， AI检测的结果通过软件buffer的⽅式传递到编码器内部，因此现有接⼝可以兼容其他模型。 ⽀持该功能的平台为**RK3588**、 **RK3576**、**RK3572**和**RV1126B**。
 
 ## 编译
 
@@ -13,6 +13,8 @@ cd ~/build/linux/aarch64
 ./make-Makefiles.bash
 
 make -j
+
+**NOTE：**需要根据实际情况修改make-Makefiles.bash中的TARGET_SOC，取值为rk3576、rk3588、rv1126b或rk3572。
 
 ## 命令选项
 
@@ -88,9 +90,15 @@ make -j
 
 ​    4 - 输入YUV文件，调用RKNN检测和encoder编码。
 
-**-soc：** 0 - RK3576，1 - RK3588。不同芯片平台的RGA/encoder有部分差异，需要做不同处理。
+​    5 - 输入YUV文件和外部NPU分割映射结果，调用encoder编码。
 
-**-rknn：**RKNN模型路径，根据芯片平台生成。
+**-soc：** 0 - RK3576，1 - RK3588， 2 - RK3572， 3 - RV1126B。不同芯片平台的RGA/encoder有部分差异，需要做不同处理。RK3576、RK3588和RV1126B只能适配RKNN2软件栈，RK3572只能适配RKNN3软件栈。
+
+**-rknn：**RKNN模型路径，根据芯片平台生成，所有平台都必选。
+
+**-weight:** RKNN3模型权重文件路径，RK3572平台必选，其他不需要。
+
+**-rknn_ver：**RKNN软件栈版本，RK3576、RK3588和RV1126B取值为2，RK3572取值为3。
 
 **-semode：**超级编码内部模式，0 - 关闭， 1 - 均衡模式， 2 - 质量优先， 3 - 码率优先， 4 - 用户自定义。
 
@@ -98,13 +106,19 @@ make -j
 
 **-smart_en：**0 - 关闭smart， 1 - smart v1， 3 - smart v3。（与-rc重叠，暂不使用）
 
-**-nn_out：**NN分割映射结果的输出路径，用于功能调试，可以确认NPU检测的准确性。+
+**-nn_out：**NN分割映射结果的输出路径，用于功能调试，可以确认NPU检测的准确性。
+
+**-nn_in：**外部NPU分割映射结果的输入路径，demo内部转换后给编码器使用，可以确认外部NPU检测的准确性。
+
+**-seek：** 跳过输入YUV的前N帧（N大于等于0），从第N+1帧开始检测。
 
 ## 相关资料
 
-MPP demo：https://github.com/HermanChen/mpp
+MPP demo：https://github.com/rockchip-linux/mpp
 
 NPU demo：https://github.com/airockchip/rknn_model_zoo
+
+​                       https://github.com/airockchip/rknn3-model-zoo
 
 RGA demo：https://github.com/airockchip/librga
 

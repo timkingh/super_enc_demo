@@ -6,32 +6,11 @@
 #ifndef MPP_SYS_CFG_H
 #define MPP_SYS_CFG_H
 
-#include "mpp_frame.h"
+#include "mpp_bit.h"
 #include "mpp_list.h"
-
-typedef enum MppSysDecBufCkhCfgChange_e {
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_ENABLE           = MPP_BIT(0),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_TYPE             = MPP_BIT(1),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_FMT_CODEC        = MPP_BIT(2),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_FMT_FBC          = MPP_BIT(3),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_FMT_HDR          = MPP_BIT(4),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_WIDTH            = MPP_BIT(5),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_HEIGHT           = MPP_BIT(6),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_CROP_TOP         = MPP_BIT(7),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_CROP_BOTTOM      = MPP_BIT(8),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_CROP_LEFT        = MPP_BIT(9),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_CROP_RIGHT       = MPP_BIT(10),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_FLAG_METADATA    = MPP_BIT(11),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_FLAG_THUMBNAIL   = MPP_BIT(12),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_H_STRIDE_BYTE    = MPP_BIT(13),
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_V_STRIDE         = MPP_BIT(14),
-
-    MPP_SYS_DEC_BUF_CHK_CFG_CHANGE_ALL              = (0xFFFFFFFFU),
-} MppSysDecBufCkhChange;
+#include "mpp_frame.h"
 
 typedef struct MppSysBaseCfg_t {
-    RK_U64 change;
-
     RK_U32 enable;
 
     /* input args start */
@@ -81,7 +60,6 @@ typedef struct MppSysBaseCfg_t {
 } MppSysDecBufChkCfg;
 
 typedef struct MppSysCfgSet_t {
-    RK_U32 change;
     MppSysDecBufChkCfg dec_buf_chk;
 } MppSysCfgSet;
 

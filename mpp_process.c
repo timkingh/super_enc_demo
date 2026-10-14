@@ -352,11 +352,11 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
     }
 
     mpp_enc_cfg_set_s32(cfg, "rc:debreath_en", 0);
-    mpp_enc_cfg_set_s32(cfg, "rc:debreath_strength", 16);
+    mpp_enc_cfg_set_s32(cfg, "rc:debreath_strength", 10);
 #ifdef RV1126B_ARMHF
     mpp_enc_cfg_set_s32(cfg, "rc:inst_br_lvl", 8);
-    mpp_enc_cfg_set_s32(cfg, "base:smt3_en", cmd->rc_mode == MPP_ENC_RC_MODE_SE);
 #endif
+    mpp_enc_cfg_set_s32(cfg, "base:smt3_en", cmd->rc_mode == MPP_ENC_RC_MODE_SE);
 
     mpp_enc_cfg_set_s32(cfg, "rc:max_reenc_times", 0);
     mpp_enc_cfg_set_s32(cfg, "tune:anti_flicker_str", p->anti_flicker_str);
@@ -366,6 +366,7 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
     mpp_enc_cfg_set_s32(cfg, "tune:sao_str_i", p->sao_str_i);
     mpp_enc_cfg_set_s32(cfg, "tune:sao_str_p", p->sao_str_p);
 
+    mpp_enc_cfg_set_s32(cfg, "tune:rc_container", 0);
     mpp_enc_cfg_set_s32(cfg, "tune:scene_mode", p->scene_mode);
     mpp_enc_cfg_set_s32(cfg, "tune:lambda_idx_i", cmd->lambda_idx_i ? cmd->lambda_idx_i : 4);
     mpp_enc_cfg_set_s32(cfg, "tune:lambda_idx_p", cmd->lambda_idx_p ? cmd->lambda_idx_p : 4);
@@ -391,6 +392,7 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
     mpp_enc_cfg_set_s32(cfg, "prep:hor_stride", p->hor_stride);
     mpp_enc_cfg_set_s32(cfg, "prep:ver_stride", p->ver_stride);
     mpp_enc_cfg_set_s32(cfg, "prep:format", p->fmt);
+    mpp_enc_cfg_set_s32(cfg, "prep:range", MPP_FRAME_RANGE_JPEG);
 
     mpp_enc_cfg_set_s32(cfg, "rc:mode", p->rc_mode);
 
@@ -474,13 +476,6 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
         }
     } break;
     case MPP_VIDEO_CodingVP8 : {
-        /* vp8 only setup base qp range */
-        mpp_enc_cfg_set_s32(cfg, "rc:qp_init", cmd->qp_init ? cmd->qp_init : 40);
-        mpp_enc_cfg_set_s32(cfg, "rc:qp_max",  cmd->qp_max ? cmd->qp_max : 127);
-        mpp_enc_cfg_set_s32(cfg, "rc:qp_min",  cmd->qp_min ? cmd->qp_min : 0);
-        mpp_enc_cfg_set_s32(cfg, "rc:qp_max_i", cmd->qp_max_i ? cmd->qp_max_i : 127);
-        mpp_enc_cfg_set_s32(cfg, "rc:qp_min_i", cmd->qp_min_i ? cmd->qp_min_i : 0);
-        mpp_enc_cfg_set_s32(cfg, "rc:qp_ip", 6);
     } break;
     case MPP_VIDEO_CodingMJPEG : {
         /* jpeg use special codec config to control qtable */
@@ -578,6 +573,8 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
         goto RET;
     }
 
+#ifndef RV1126B_ARMHF
+    /* enable smart mode by smart_en on RV1126B */
     if (cmd->type == MPP_VIDEO_CodingAVC || cmd->type == MPP_VIDEO_CodingHEVC) {
         RcApiBrief rc_api_brief;
         rc_api_brief.type = cmd->type;
@@ -589,7 +586,9 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
             mpp_err("mpi control enc set rc api failed ret %d\n", ret);
             goto RET;
         }
+        mpp_log("set rc api to %s\n", rc_api_brief.name);
     }
+#endif
 
     if (ref)
         mpp_enc_ref_cfg_deinit(&ref);
@@ -621,11 +620,6 @@ static MPP_RET test_mpp_enc_cfg_setup(MpiEncTestArgs *cmd, MppTestCtx *p)
     mpp_env_get_u32("osd_mode", &p->osd_mode, MPP_ENC_OSD_PLT_TYPE_DEFAULT);
     mpp_env_get_u32("roi_enable", &p->roi_enable, 0);
     mpp_env_get_u32("user_data_enable", &p->user_data_enable, 0);
-
-    // if (p->roi_enable) {
-    //     mpp_enc_roi_init(&p->roi_ctx, p->width, p->height, p->type, 4);
-    //     mpp_assert(p->roi_ctx);
-    // }
 
 RET:
     return ret;
@@ -973,18 +967,18 @@ MPP_RET super_enc_mpp_process(SuperEncCtx *sec)
             KmppShmPtr sptr_test;
             kmpp_buf_cfg_get_sptr(p->obj_kbuf_cfg, &sptr_test);
             if (sptr_test.uptr) {
-                object_map_result_list *dst = sptr_test.uptr;
+                ObjMapRetLst *dst = sptr_test.uptr;
                 memset(dst, 0, p->obj_size);
                 if (sec->om_results.object_seg_map)
                     memcpy((void *)dst, sec->om_results.object_seg_map, p->obj_size);
-                mpp_log("obj_buf %p size %d\n", dst, p->obj_size);
+                mpp_log_f("line %d obj_buf %p size %d\n", __LINE__, dst, p->obj_size);
                 kmpp_buffer_flush(p->obj_kbuf);
             }
 
             sptr_p = kmpp_obj_to_shm(p->obj_kbuf);
             kmpp_meta_set_shm(kmeta, KEY_NPU_SOBJ_FLAG, sptr_p);
 
-            mpp_enc_cfg_set_s32(p->cfg, "tune:fg_area", sec->om_results.foreground_area);
+            mpp_enc_cfg_set_s32(p->cfg, "tune:fg_area", sec->om_results.fg_area);
             ret = mpi->control(ctx, MPP_ENC_SET_CFG, p->cfg);
             if (ret) {
                 mpp_err("mpi control enc set cfg failed ret %d\n", ret);
@@ -1169,7 +1163,7 @@ MPP_RET super_enc_mpp_process(SuperEncCtx *sec)
         mpp_meta_set_buffer(meta, KEY_MOTION_INFO, p->md_info);
 
         if (p->rc_mode == MPP_ENC_RC_MODE_SE || cmd->smart_en == 3) {
-            mpp_enc_cfg_set_s32(p->cfg, "tune:fg_area", sec->om_results.foreground_area);
+            mpp_enc_cfg_set_s32(p->cfg, "tune:fg_area", sec->om_results.fg_area);
             ret = mpi->control(ctx, MPP_ENC_SET_CFG, p->cfg);
             if (ret) {
                 mpp_err("mpi control enc set cfg failed ret %d\n", ret);
@@ -1180,60 +1174,6 @@ MPP_RET super_enc_mpp_process(SuperEncCtx *sec)
             if(ret)
                 mpp_err_f("meta %p set npu obj flag %p failed ret %d\n",
                           meta, sec->om_results.object_seg_map, ret);
-        }
-
-        if (p->osd_enable || p->user_data_enable || p->roi_enable) {
-            if (p->user_data_enable) {
-                MppEncUserData user_data;
-                char *str = "this is user data\n";
-
-                if ((p->frame_count & 10) == 0) {
-                    user_data.pdata = str;
-                    user_data.len = strlen(str) + 1;
-                    mpp_meta_set_ptr(meta, KEY_USER_DATA, &user_data);
-                }
-                static RK_U8 uuid_debug_info[16] = {
-                    0x57, 0x68, 0x97, 0x80, 0xe7, 0x0c, 0x4b, 0x65,
-                    0xa9, 0x06, 0xae, 0x29, 0x94, 0x11, 0xcd, 0x9a
-                };
-
-                MppEncUserDataSet data_group;
-                MppEncUserDataFull datas[2];
-                char *str1 = "this is user data 1\n";
-                char *str2 = "this is user data 2\n";
-                data_group.count = 2;
-                datas[0].len = strlen(str1) + 1;
-                datas[0].pdata = str1;
-                datas[0].uuid = uuid_debug_info;
-
-                datas[1].len = strlen(str2) + 1;
-                datas[1].pdata = str2;
-                datas[1].uuid = uuid_debug_info;
-
-                data_group.datas = datas;
-
-                mpp_meta_set_ptr(meta, KEY_USER_DATAS, &data_group);
-            }
-
-            if (p->osd_enable) {
-                /* gen and cfg osd plt */
-                mpi_enc_gen_osd_plt(&p->osd_plt, p->frame_count);
-
-                p->osd_plt_cfg.change = MPP_ENC_OSD_PLT_CFG_CHANGE_ALL;
-                p->osd_plt_cfg.type = MPP_ENC_OSD_PLT_TYPE_USERDEF;
-                p->osd_plt_cfg.plt = &p->osd_plt;
-
-                ret = mpi->control(ctx, MPP_ENC_SET_OSD_PLT_CFG, &p->osd_plt_cfg);
-                if (ret) {
-                    mpp_err("mpi control enc set osd plt failed ret %d\n", ret);
-                    goto RET;
-                }
-
-                /* gen and cfg osd plt */
-                mpi_enc_gen_osd_data(&p->osd_data, p->buf_grp, p->width,
-                                     p->height, p->frame_count);
-                mpp_meta_set_ptr(meta, KEY_OSD_DATA, (void*)&p->osd_data);
-            }
         }
 
         if (!p->first_frm)

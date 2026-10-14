@@ -1,4 +1,22 @@
 ---------------------------------------------------------------------------------------------------------
+20260623:更新MPP版本到c9902c5b64b2f120e2b13400cd7f5578db0a2577
+
+commit c9902c5b64b2f120e2b13400cd7f5578db0a2577
+Author: Herman Chen <herman.chen@rock-chips.com>
+Date:   Tue Jun 23 00:33:21 2026 +0800
+
+    fix[osal]: Fix pthread_setname_np failure
+
+    Add thread entry wrapper: setname runs in the new thread's own context,
+    so it never races with the thread exiting. The previous code setname'd
+    from the parent right after pthread_create, which returned ESRCH for
+    short-lived threads.
+
+    Change-Id: Ic9c43c566069bd8ce66197160d6a26156f31a690
+    Signed-off-by: Herman Chen <herman.chen@rock-chips.com>
+---------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------
 20260126:更新MPP版本到f5b48c35f77322c20113a8c05aa2d250adb66c3c
 
 commit f5b48c35f77322c20113a8c05aa2d250adb66c3c

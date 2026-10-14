@@ -30,6 +30,7 @@ typedef enum {
     RUN_YUV_RKNN, /* run rknn only, input is yuv */
     RUN_YUV_MPP, /* run mpp only, input is yuv */
     RUN_YUV_RKNN_MPP, /* run rknn + mpp, input is yuv */
+    RUN_YUV_EXTERNAL_NPU_MPP, /* run mpp only, input is yuv, external npu results */
     RUn_TYPE_BUTT
 } RunType;
 
@@ -38,8 +39,12 @@ typedef struct MpiEncTestArgs_t {
     char                *file_output;
     char                *file_cfg;
     char                *model_path;
+    char                *nn_in; /* external npu input file */
     char                *nn_out;
     char                *nn_dect_rect; /* detect rectangles output file */
+    char                *cme_out; /* CME output file */
+    int                 cme_pred_interval; /* CME prediction reset interval, 0=disable */
+    char                *weight; /* model weight file path */
     dictionary          *cfg_ini;
 
     MppCodingType       type;
@@ -147,8 +152,10 @@ typedef struct MpiEncTestArgs_t {
      */
     RunType             run_type;
 
-    /* 0 - RK3576; 1 - RK3588 */
+    /* 0 - RK3576; 1 - RK3588; 2 - RK3572 */
     RK_S32              soc_id;
+    /* 1 - RKNN1; 2 - RKNN2; 3 - RKNN3 */
+    RK_S32              rknn_ver;
     /* 0 - person + book, for dep2
      * 1 - person + bicycle + car + motorcycle + bus, for dep1
      */
@@ -160,6 +167,9 @@ typedef struct MpiEncTestArgs_t {
     RK_U32              rect_to_segmap_en; /* rectangle to segment map flag */
     RK_U32              smart_en; /* 0 - disable, 1 - smart v1, 3 - smart v3 */
     RK_U32              show_time; /* show time cost flag */
+
+    /* -seek: seek input YUV to frame N before encoding (N >= 0) */
+    RK_S32              seek;
 } MpiEncTestArgs;
 
 #ifdef __cplusplus
@@ -171,8 +181,6 @@ RK_S32 mpi_enc_width_default_stride(RK_S32 width, MppFrameFormat fmt);
 MpiEncTestArgs *mpi_enc_test_cmd_get(void);
 MPP_RET mpi_enc_test_cmd_update_by_args(MpiEncTestArgs* cmd, int argc, char **argv);
 MPP_RET mpi_enc_test_cmd_put(MpiEncTestArgs* cmd);
-
-MPP_RET mpi_enc_test_cmd_show_opt(MpiEncTestArgs* cmd);
 
 #ifdef __cplusplus
 }

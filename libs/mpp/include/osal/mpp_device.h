@@ -32,6 +32,7 @@ typedef enum MppDevIoctlCmd_e {
     MPP_DEV_RCB_INFO,
     MPP_DEV_SET_INFO,
     MPP_DEV_SET_ERR_REF_HACK,
+    MPP_DEV_SET_FLAG,
     MPP_DEV_LOCK_MAP,
     MPP_DEV_UNLOCK_MAP,
     MPP_DEV_ATTACH_FD,
@@ -83,12 +84,35 @@ typedef struct MppDevSetInfoCfg_t {
     RK_U64  data;
 } MppDevInfoCfg;
 
+/*
+ * VEPU_5XX Slice Info Register Structure
+ *
+ * Different VEPU versions have different bitfield layouts:
+ * - VEPU580/541:  25-bit length + 7-bit reserved
+ * - VEPU510:      31-bit length + 1-bit last flag
+ * - VEPU511/511A: 30-bit length + 1-bit last + 1-bit stream_id
+ */
 typedef union MppDevPollEncSliceInfo_u {
     RK_U32  val;
+
+    /* Generic access - compatible with VEPU580/VEPU541 */
     struct {
         RK_U32  length  : 31;
         RK_U32  last    : 1;
     };
+
+    /* VEPU510 specific access */
+    struct {
+        RK_U32  sli_len : 31;
+        RK_U32  sli_lst : 1;
+    } vepu510;
+
+    /* VEPU511/511A specific access */
+    struct {
+        RK_U32  sli_len : 30;
+        RK_U32  sli_lst : 1;
+        RK_U32  sli_sid : 1;  /* stream id */
+    } vepu511;
 } MppDevPollEncSliceInfo;
 
 /* for MPP_DEV_POLL */
@@ -136,6 +160,7 @@ typedef struct MppDevApi_t {
     MPP_RET     (*rcb_info)(void *ctx, MppDevRcbInfoCfg *cfg);
     MPP_RET     (*set_info)(void *ctx, MppDevInfoCfg *cfg);
     MPP_RET     (*set_err_ref_hack)(void *ctx, RK_U32 *enable);
+    MPP_RET     (*set_flag)(void *ctx, RK_U32 *flag);
 
     /* buffer attach / detach */
     MPP_RET     (*lock_map)(void *ctx);

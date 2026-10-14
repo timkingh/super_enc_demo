@@ -110,7 +110,7 @@ static int read_image_jpeg(const char* path, image_buffer_t* image)
     int crop_width = origin_width / 16 * 16;
     int crop_height = origin_height / 16 * 16;
 
-    printf("origin size=%dx%d crop size=%dx%d\n", origin_width, origin_height, crop_width, crop_height);
+    img_dbg_info("origin size=%dx%d crop size=%dx%d\n", origin_width, origin_height, crop_width, crop_height);
 
     // gettimeofday(&tv1, NULL);
     ret = tjDecompressHeader3(handle, jpegBuf, size, &width, &height, &subsample, &colorspace);
@@ -118,7 +118,7 @@ static int read_image_jpeg(const char* path, image_buffer_t* image)
         printf("header file error, errorStr:%s, errorCode:%d\n", tjGetErrorStr(), tjGetErrorCode(handle));
         return -1;
     }
-    printf("input image: %d x %d, subsampling: %s, colorspace: %s, orientation: %d\n",
+    img_dbg_info("input image: %d x %d, subsampling: %s, colorspace: %s, orientation: %d\n",
             width, height, subsampName[subsample], colorspaceName[colorspace], orientation);
     int sw_out_size = width * height * 3;
     unsigned char* sw_out_buf = image->virt_addr;
@@ -132,7 +132,6 @@ static int read_image_jpeg(const char* path, image_buffer_t* image)
 
     flags |= 0;
 
-    // 错误码为0时，表示警告，错误码丄1�71ￄ1�77-1时表示错评1�71ￄ1�77
     int pixelFormat = TJPF_RGB;
     ret = tjDecompress2(handle, jpegBuf, size, sw_out_buf, width, 0, height, pixelFormat, flags);
     // ret = tjDecompressToYUV2(handle, jpeg_buf, size, dst_buf, *width, padding, *height, flags);
@@ -145,8 +144,6 @@ static int read_image_jpeg(const char* path, image_buffer_t* image)
         printf("warning : errorStr:%s, errorCode:%d\n", tjGetErrorStr(), tjGetErrorCode(handle));
     }
     tjDestroy(handle);
-    // gettimeofday(&tv2, NULL);
-    // printf("decode time %ld ms\n", (tv2.tv_sec-tv1.tv_sec)*1000 + (tv2.tv_usec-tv1.tv_usec)/1000);
 
     image->width = width;
     image->height = height;
@@ -808,10 +805,10 @@ int convert_image_with_letterbox(image_buffer_t* src_image, image_buffer_t* dst_
     float _scale_h = (float)dst_h / src_h;
     if(_scale_w < _scale_h) {
         scale = _scale_w;
-        resize_h = (int) src_h*scale;
+        resize_h = (int) src_h * scale;
     } else {
         scale = _scale_h;
-        resize_w = (int) src_w*scale;
+        resize_w = (int) src_w * scale;
     }
     // slight change image size for align
     if (allow_slight_change == 1 && (resize_w % 4 != 0)) {

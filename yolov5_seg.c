@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include "yolov5_seg.h"
-#include "postprocess.h"
+#include "postproc_yolov5_seg_rknn2.h"
 #include "mpp_log.h"
 #include "mpp_err.h"
 #include "mpp_time.h"
@@ -33,7 +33,7 @@ static void dump_tensor_attr(rknn_tensor_attr *attr)
         get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
 }
 
-RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
+MPP_RET init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
 {
     int ret;
     int model_len = 0;
@@ -49,14 +49,14 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
     model_len = read_data_from_file(model_path, &model);
     if (model == NULL) {
         mpp_err("load_model fail!\n");
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
 
     ret = rknn_init(&ctx, model, model_len, 0, NULL);
     free(model);
     if (ret < 0) {
         mpp_err("rknn_init fail! ret=%d\n", ret);
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
 
     {
@@ -73,7 +73,7 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
     ret = rknn_query(ctx, RKNN_QUERY_IN_OUT_NUM, &io_num, sizeof(io_num));
     if (ret != RKNN_SUCC) {
         mpp_err("rknn_query fail! ret=%d\n", ret);
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
     seg_dbg_model("input num: %d, output num: %d\n", io_num.n_input, io_num.n_output);
 
@@ -83,7 +83,7 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
     nn_ctx->input_attrs = (rknn_tensor_attr *)calloc(1, io_num.n_input * sizeof(rknn_tensor_attr));
     if (!nn_ctx->input_attrs) {
         mpp_err("malloc input attrs fail!\n");
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
 
     for (int i = 0; i < io_num.n_input; i++) {
@@ -93,7 +93,7 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
         ret = rknn_query(ctx, RKNN_QUERY_INPUT_ATTR, attr, sizeof(rknn_tensor_attr));
         if (ret != RKNN_SUCC) {
             mpp_err("rknn_query fail! ret=%d\n", ret);
-            return ROCKIVA_RET_FAIL;
+            return MPP_NOK;
         }
         dump_tensor_attr(attr);
     }
@@ -115,7 +115,7 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
     nn_ctx->output_attrs = (rknn_tensor_attr *)calloc(1, io_num.n_output * sizeof(rknn_tensor_attr));
     if (!nn_ctx->output_attrs) {
         mpp_err("malloc output attrs fail!\n");
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
 
     for (int i = 0; i < io_num.n_output; i++) {
@@ -125,7 +125,7 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
         ret = rknn_query(ctx, RKNN_QUERY_OUTPUT_ATTR, attr, sizeof(rknn_tensor_attr));
         if (ret != RKNN_SUCC) {
             mpp_err("rknn_query fail! ret=%d\n", ret);
-            return ROCKIVA_RET_FAIL;
+            return MPP_NOK;
         }
         dump_tensor_attr(attr);
     }
@@ -134,14 +134,14 @@ RKYOLORetCode init_yolov5_seg_model(const char *model_path, RknnCtx *nn_ctx)
     nn_ctx->rknn_ctx = ctx;
     attr = nn_ctx->output_attrs;
     nn_ctx->is_quant = (attr->qnt_type == RKNN_TENSOR_QNT_AFFINE_ASYMMETRIC &&
-                         attr->type != RKNN_TENSOR_FLOAT16);
+                        attr->type != RKNN_TENSOR_FLOAT16);
 
     seg_dbg_func("leave\n");
 
-    return ROCKIVA_RET_SUCCESS;
+    return MPP_OK;
 }
 
-RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, rknn_output outputs[])
+MPP_RET inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, rknn_output outputs[])
 {
     int ret;
     image_buffer_t dst_img;
@@ -158,7 +158,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
     input = calloc(1, sizeof(rknn_input) * nn_ctx->io_num.n_input);
     if (!input) {
         mpp_err_f("malloc input fail!\n");
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
 
     // Pre Process
@@ -175,7 +175,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
         dst_img.virt_addr = (unsigned char *)malloc(dst_img.size);
         if (dst_img.virt_addr == NULL) {
             mpp_err_f("malloc buffer size:%d fail!\n", dst_img.size);
-            return ROCKIVA_RET_FAIL;
+            return MPP_NOK;
         }
     }
 
@@ -184,7 +184,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
     ret = convert_image_with_letterbox(img, &dst_img, &nn_ctx->letter_box, bg_color);
     if (ret < 0) {
         mpp_err_f("convert_image_with_letterbox fail! ret=%d\n", ret);
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
     time_end = mpp_time();
     seg_dbg_time("convert_image_with_letterbox(RGA) time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
@@ -200,7 +200,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
     ret = rknn_inputs_set(nn_ctx->rknn_ctx, nn_ctx->io_num.n_input, input);
     if (ret < 0) {
         mpp_err_f("rknn_input_set fail! ret=%d\n", ret);
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
     time_end = mpp_time();
     seg_dbg_time("rknn_inputs_set time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
@@ -218,7 +218,7 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
     ret = rknn_outputs_get(nn_ctx->rknn_ctx, nn_ctx->io_num.n_output, outputs, NULL);
     if (ret < 0) {
         mpp_err_f("rknn_outputs_get fail! ret=%d\n", ret);
-        return ROCKIVA_RET_FAIL;
+        return MPP_NOK;
     }
     time_end = mpp_time();
     seg_dbg_time("rknn_outputs_get time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
@@ -226,10 +226,10 @@ RKYOLORetCode inference_yolov5_seg_model(RknnCtx *nn_ctx, image_buffer_t *img, r
     SE_FREE(input);
     seg_dbg_func("leave\n");
 
-    return ROCKIVA_RET_SUCCESS;
+    return MPP_OK;
 }
 
-RKYOLORetCode post_process_image(RknnCtx *nn_ctx, object_detect_result_list *od_results,
+MPP_RET post_process_image(RknnCtx *nn_ctx, ObjDetRetLst *od_results,
                                  rknn_output outputs[])
 {
     int ret = 0;
@@ -257,7 +257,7 @@ RKYOLORetCode post_process_image(RknnCtx *nn_ctx, object_detect_result_list *od_
 #endif
     seg_dbg_func("leave\n");
 
-    return ROCKIVA_RET_SUCCESS;
+    return MPP_OK;
 }
 
 static void get_blk_object(int blk_pos_x, int blk_pos_y, int pic_width,int pic_height,
@@ -273,8 +273,8 @@ static void get_blk_object(int blk_pos_x, int blk_pos_y, int pic_width,int pic_h
     }
 
     // calculate the block end position
-    blk_end_x = VPU_MIN(blk_pos_x + 15, pic_width - 1);
-    blk_end_y = VPU_MIN(blk_pos_y + 15, pic_height - 1);
+    blk_end_x = MPP_MIN(blk_pos_x + 15, pic_width - 1);
+    blk_end_y = MPP_MIN(blk_pos_y + 15, pic_height - 1);
 
     memset(&roi_calc_list, 0, sizeof(int) * 6);
     // calculate the number of pixels (in a 16x16 block) in each category
@@ -306,14 +306,14 @@ static void get_blk_object(int blk_pos_x, int blk_pos_y, int pic_width,int pic_h
     }
 }
 
-RKYOLORetCode seg_mask_to_class_map(RknnCtx *rknn_nn_ctx, object_detect_result_list *od_results,
-                                    object_map_result_list *object_results, uint8_t ctu_size, int frame_count)
+MPP_RET seg_mask_to_class_map(RknnCtx *nn_ctx, ObjDetRetLst *od_results,
+                                    ObjMapRetLst *object_results, uint8_t ctu_size, int frame_count)
 {
     int i, j, k, l, m;
     int h, w, block_num, pos_idx;
     int blk_pos_x, blk_pos_y, blk_end_x, blk_end_y;
-    int pic_width = rknn_nn_ctx->input_image_width;
-    int pic_height = rknn_nn_ctx->input_image_height;
+    int pic_width = nn_ctx->input_image_width;
+    int pic_height = nn_ctx->input_image_height;
     uint8_t *object_map = object_results->object_seg_map;
     uint8_t *seg_mask = od_results->results_seg[0].seg_mask;
     int b16_num = MPP_ALIGN(pic_width, ctu_size) / 16 * MPP_ALIGN(pic_height, ctu_size) / 16;
@@ -325,7 +325,7 @@ RKYOLORetCode seg_mask_to_class_map(RknnCtx *rknn_nn_ctx, object_detect_result_l
 
     block_num = 0;
     // if more than one object, we need to convert the object map
-    if (od_results->count >= 1) {
+    if (od_results->count >= 1 || (nn_ctx->run_type == 5)) { /* RUN_YUV_EXTERNAL_NPU_MPP */
         object_results->found_objects = 1;
 
         for (h = 0; h < pic_height; h += ctu_size) {
@@ -334,26 +334,27 @@ RKYOLORetCode seg_mask_to_class_map(RknnCtx *rknn_nn_ctx, object_detect_result_l
                     for (j = 0; j < ctu_size / 16; j++) {
                         blk_pos_x = w + j * 16;
                         blk_pos_y = h + i * 16;
-                        // calculate the number of pixels (in a 16x16 block) in each category
-                        get_blk_object(blk_pos_x, blk_pos_y, pic_width, pic_height,
-                                       seg_mask, object_map, block_num);
+
+                        if (nn_ctx->run_type != 5)
+                            get_blk_object(blk_pos_x, blk_pos_y, pic_width, pic_height,
+                                           seg_mask, object_map, block_num);
                         fg_b16_num += (object_map[block_num] >= 1);
                         if (object_map[block_num] || (block_num == b16_num - 1))
-                            FPRINT(rknn_nn_ctx->fp_segmap, "frame %d blk_idx %d (%d, %d) object_map %d\n",
+                            FPRINT(nn_ctx->fp_segmap, "frame %d blk_idx %d (%d, %d) object_map %d\n",
                                    frame_count, block_num, blk_pos_x, blk_pos_y, object_map[block_num]);
                         block_num++;
                     }
                 }
             }
         }
-    } else if (rknn_nn_ctx->fp_segmap) {
+    } else if (nn_ctx->fp_segmap) {
         /* for nn result debug */
-        FPRINT(rknn_nn_ctx->fp_segmap, "frame %d blk_idx %d (0, 0) object_map 0\n", frame_count, b16_num - 1);
+        FPRINT(nn_ctx->fp_segmap, "frame %d blk_idx %d (0, 0) object_map 0\n", frame_count, b16_num - 1);
     }
 
-    object_results->foreground_area = fg_b16_num * 100 / b16_num;
+    object_results->fg_area = fg_b16_num * 100 / b16_num;
 
-    if (seg_mask && !rknn_nn_ctx->pre_alloc_mask) {
+    if (seg_mask && !nn_ctx->pre_alloc_mask) {
         free(od_results->results_seg[0].seg_mask);
         od_results->results_seg[0].seg_mask = NULL;
     }
@@ -362,10 +363,10 @@ RKYOLORetCode seg_mask_to_class_map(RknnCtx *rknn_nn_ctx, object_detect_result_l
     seg_dbg_time("seg_mask_to_class_map(postprocess) time: %0.2f ms\n", (float)(time_end - time_start) / 1000);
     seg_dbg_func("leave\n");
 
-    return ROCKIVA_RET_SUCCESS;
+    return MPP_OK;
 }
 
-RKYOLORetCode release_yolov5_seg_model(RknnCtx *nn_ctx)
+MPP_RET release_yolov5_seg_model(RknnCtx *nn_ctx)
 {
     seg_dbg_func("enter\n");
 
@@ -379,5 +380,5 @@ RKYOLORetCode release_yolov5_seg_model(RknnCtx *nn_ctx)
 
     seg_dbg_func("leave\n");
 
-    return ROCKIVA_RET_SUCCESS;
+    return MPP_OK;
 }

@@ -5,8 +5,10 @@ project(super_enc_v3_test)
 message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 set(EXECUTABLE_OUTPUT_PATH ./)
 
+include_directories(${PROJECT_SOURCE_DIR})
 include_directories(libs/librga/include)
 include_directories(libs/rknpu2/include)
+include_directories(libs/rknpu3/include)
 include_directories(libs/mpp/include)
 include_directories(libs/mpp/include/osal)
 include_directories(libs/mpp/include/base)
@@ -17,6 +19,10 @@ include_directories(libs/allocator/dma/)
 include_directories(postprocess)
 include_directories(nn_utils)
 include_directories(mpp_utils)
+
+if (TARGET_SOC STREQUAL "rk3572")
+    add_definitions(-DRKNN_V3)
+endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
     set(RGA_LIB ${PROJECT_SOURCE_DIR}/libs/librga/Android/${CMAKE_ANDROID_ARCH_ABI}/librga.so)
@@ -32,12 +38,19 @@ elseif (TARGET_SOC STREQUAL "rv1126b")
     find_library(MPP_LIB rockchip_mpp HINTS libs/mpp/Linux/armhf)
 else()
     find_library(RGA_LIB NAMES rga PATHS libs/librga/Linux/aarch64)
-    find_library(RKNNRT_LIB rknnrt HINTS libs/rknpu2/Linux/aarch64)
     find_library(MPP_LIB rockchip_mpp HINTS libs/mpp/Linux/aarch64)
+    find_library(RKNNRT_LIB rknnrt HINTS libs/rknpu2/Linux/aarch64)
+
+    if (TARGET_SOC STREQUAL "rk3572")
+        find_library(RKNN3RT_LIB rknn3_api_native HINTS libs/rknpu3/Linux/aarch64)
+    endif()
 endif()
 
 message("RGA_LIB: ${RGA_LIB}")
 message("RKNNRT_LIB: ${RKNNRT_LIB}")
+if (TARGET_SOC STREQUAL "rk3572")
+    message("RKNN3RT_LIB: ${RKNN3RT_LIB}")
+endif()
 message("MPP_LIB: ${MPP_LIB}")
 
 add_subdirectory(nn_utils)
@@ -46,9 +59,17 @@ add_subdirectory(mpp_utils)
 
 add_executable(super_enc_v3_test super_enc_v3_test.cpp
                super_enc_common.c
+               postproc_common.c
                yolov5_seg.c
+               yolov6_rknn3.c
                rknn_process.cpp
                mpp_process.c)
 
-target_link_libraries(super_enc_v3_test ${RKNNRT_LIB} ${RGA_LIB} ${MPP_LIB}
-                      nn_utils postprocess mpp_utils)
+if (TARGET_SOC STREQUAL "rk3572")
+    target_link_libraries(super_enc_v3_test ${RKNNRT_LIB} ${RKNN3RT_LIB} ${RGA_LIB} ${MPP_LIB}
+                          nn_utils postprocess mpp_utils)
+else()
+    target_link_libraries(super_enc_v3_test ${RKNNRT_LIB} ${RGA_LIB} ${MPP_LIB}
+                          nn_utils postprocess mpp_utils)
+endif()
+

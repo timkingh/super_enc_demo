@@ -17,8 +17,7 @@
 #ifndef RK_VENC_REF_H
 #define RK_VENC_REF_H
 
-#include "rk_type.h"
-#include "mpp_err.h"
+#include "rk_mpp_cfg.h"
 
 /*
  * MPP reference management system follows the model of H.264/H.265 reference
@@ -64,8 +63,10 @@
 
 /* max 4 temporal layer */
 #define MPP_ENC_MAX_TEMPORAL_LAYER_NUM      4
-/* max 4 long-term reference frame */
+/* max 16 long-term reference frame */
 #define MPP_ENC_MAX_LT_REF_NUM              16
+/* max 16 ref cfg entries (DPB size limit from H.264/H.265) */
+#define MPP_ENC_MAX_REF_CFG_NUM             16
 
 /*
  * Group Of Picture (GOP) config is separated into three parts:
@@ -256,7 +257,11 @@ MPP_RET mpp_enc_ref_cfg_check(MppEncRefCfg ref);
  */
 MPP_RET mpp_enc_ref_cfg_set_keep_cpb(MppEncRefCfg ref, RK_S32 keep);
 MPP_RET mpp_enc_ref_cfg_get_preset(MppEncRefPreset *preset);
-MPP_RET mpp_enc_ref_cfg_show(MppEncRefCfg ref);
+void mpp_enc_ref_cfg_show(void);
+
+/* JSON config apply / extract */
+MPP_RET mpp_enc_ref_cfg_apply(MppEncRefCfg ref, MppCfgStrFmt fmt, char *buf);
+MPP_RET mpp_enc_ref_cfg_extract(MppEncRefCfg ref, MppCfgStrFmt fmt, char **buf);
 
 #ifdef __cplusplus
 }

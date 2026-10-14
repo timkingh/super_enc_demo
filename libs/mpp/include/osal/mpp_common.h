@@ -7,6 +7,7 @@
 #define MPP_COMMON_H
 
 #include "rk_type.h"
+#include "mpp_err.h"
 
 #define MPP_TAG_SIZE            32
 
@@ -20,7 +21,7 @@
 #define MPP_MIN3(a,b,c)         MPP_MIN(MPP_MIN(a,b),c)
 #define MPP_MIN4(a, b, c, d)    MPP_MIN((a), MPP_MIN3((b), (c), (d)))
 
-#define MPP_DIV(a, b)           ((b) ? (a) / (b) : (a))
+#define MPP_DIV(a, b)           (((b) != 0) ? (a) / (b) : (a))
 
 #define MPP_CLIP3(l, h, v)      ((v) < (l) ? (l) : ((v) > (h) ? (h) : (v)))
 #define MPP_SIGN(a)             ((a) < (0) ? (-1) : (1))
@@ -28,6 +29,8 @@
 
 #define MPP_SWAP(type, a, b)    do {type SWAP_tmp = b; b = a; a = SWAP_tmp;} while(0)
 #define MPP_ARRAY_ELEMS(a)      (sizeof(a) / sizeof((a)[0]))
+#define MPP_ARRAY_ELEMS_U(a)    ((rk_u32)(sizeof(a) / sizeof((a)[0])))
+#define MPP_ARRAY_ELEMS_S(a)    ((rk_s32)(sizeof(a) / sizeof((a)[0])))
 #define MPP_ALIGN(x, a)         (((x)+(a)-1)&~((a)-1))
 #define MPP_ALIGN_DOWN(x, a)    ((x)&~((a)-1))
 #define MPP_ALIGN_GEN(x, a)     (((x)+(a)-1)/(a)*(a))
@@ -222,11 +225,24 @@ static __inline RK_S32 mpp_dup(RK_S32 fd)
 }
 
 RK_S32 axb_div_c(RK_S32 a, RK_S32 b, RK_S32 c);
+RK_U32 mpp_align_8(RK_U32 val);
 RK_U32 mpp_align_16(RK_U32 val);
 RK_U32 mpp_align_64(RK_U32 val);
 RK_U32 mpp_align_128(RK_U32 val);
 RK_U32 mpp_align_256_odd(RK_U32 val);
 RK_U32 mpp_align_128_odd_plus_64(RK_U32 val);
+RK_U32 mpp_align_wxh2yuv420(RK_U32 val);
+RK_U32 mpp_align_wxh2yuv422(RK_U32 val);
+RK_U32 mpp_align_wxh2yuv444(RK_U32 val);
+
+// Clip a signed integer to the range [0, 2^n - 1]
+RK_U32 mpp_clip_uint_pow2(RK_S32 val, RK_S32 n);
+// Divide an unsigned integer x by 2^n and round to nearest integer
+RK_U64 mpp_round_pow2(RK_U64 x, RK_U16 n);
+// Divide a signed integer x by 2^n and round to nearest integer
+RK_S64 mpp_round_pow2_signed(RK_S64 x, RK_U16 n);
+
+MPP_RET mpp_mkdir_p(const char *path);
 
 #ifdef __cplusplus
 }

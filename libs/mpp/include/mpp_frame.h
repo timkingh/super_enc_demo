@@ -194,6 +194,7 @@ typedef enum {
 
 #define MPP_FRAME_FBC_MASK          (0x00f00000)
 #define MPP_FRAME_FBC_NONE          (0x00000000)
+#define MPP_FRAME_FBC_SHIFT         (20)
 
 #define MPP_FRAME_HDR_MASK          (0x0c000000)
 #define MPP_FRAME_HDR_NONE          (0x00000000)
@@ -235,9 +236,11 @@ typedef enum {
 /*
  * For MPP_FRAME_FBC_AFBC_V1 the 16byte aligned stride is used.
  */
-#define MPP_FRAME_FMT_IS_FBC(fmt)   (fmt & MPP_FRAME_FBC_MASK)
-#define MPP_FRAME_FMT_IS_AFBC(fmt)  (fmt & (MPP_FRAME_FBC_AFBC_V1 | MPP_FRAME_FBC_AFBC_V2))
-#define MPP_FRAME_FMT_IS_RKFBC(fmt) (fmt & MPP_FRAME_FBC_RKFBC)
+#define MPP_FRAME_FMT_IS_FBC(fmt)     (fmt & MPP_FRAME_FBC_MASK)
+#define MPP_FRAME_FMT_IS_AFBC(fmt)    (fmt & (MPP_FRAME_FBC_AFBC_V1 | MPP_FRAME_FBC_AFBC_V2))
+#define MPP_FRAME_FMT_IS_AFBC_V1(fmt) (fmt & MPP_FRAME_FBC_AFBC_V1)
+#define MPP_FRAME_FMT_IS_AFBC_V2(fmt) (fmt & MPP_FRAME_FBC_AFBC_V2)
+#define MPP_FRAME_FMT_IS_RKFBC(fmt)   (fmt & MPP_FRAME_FBC_RKFBC)
 
 #define MPP_FRAME_FMT_IS_HDR(fmt)   (fmt & MPP_FRAME_HDR_MASK)
 
@@ -294,6 +297,15 @@ typedef enum {
 
     MPP_FMT_BUTT,
 } MppFrameFormat;
+
+typedef enum MppFmtLayout_e {
+    MPP_FMT_RASTER,
+    MPP_FMT_AFBC16X16,
+    MPP_FMT_AFBC32X8,
+    MPP_FMT_RKFBC64X4,
+    MPP_FMT_TILE4X4,
+    MPP_FMT_BUT,
+} MppFmtLayout;
 
 /**
  * Rational number (pair of numerator and denominator).
@@ -460,6 +472,12 @@ MppFrameChromaLocation mpp_frame_get_chroma_location(const MppFrame frame);
 void    mpp_frame_set_chroma_location(MppFrame frame, MppFrameChromaLocation chroma_location);
 MppFrameFormat mpp_frame_get_fmt(MppFrame frame);
 void    mpp_frame_set_fmt(MppFrame frame, MppFrameFormat fmt);
+MppFmtLayout mpp_frame_get_fmt_layout(const MppFrame frame);
+void    mpp_frame_set_fmt_layout(MppFrame frame, MppFmtLayout data_layout);
+RK_U32 mpp_frame_get_fbc_uncompress(const MppFrame frame);
+void    mpp_frame_set_fbc_uncompress(MppFrame frame, RK_U32 fbc_uncompress);
+RK_U32 mpp_frame_get_fbc_sparse(const MppFrame frame);
+void    mpp_frame_set_fbc_sparse(MppFrame frame, RK_U32 fbc_sparse);
 MppFrameRational mpp_frame_get_sar(const MppFrame frame);
 void    mpp_frame_set_sar(MppFrame frame, MppFrameRational sar);
 MppFrameMasteringDisplayMetadata mpp_frame_get_mastering_display(const MppFrame frame);

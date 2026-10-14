@@ -94,8 +94,10 @@ MpiEncTestArgs *mpi_enc_test_cmd_get(void)
 {
     MpiEncTestArgs *args = mpp_calloc(MpiEncTestArgs, 1);
 
-    if (args)
+    if (args) {
         args->nthreads = 1;
+        args->rknn_ver = 2;
+    }
 
     return args;
 }
@@ -136,6 +138,24 @@ RK_S32 mpi_enc_opt_nn_out(void *ctx, const char *next)
     return 0;
 }
 
+RK_S32 mpi_enc_opt_nn_in(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        size_t len = strnlen(next, MAX_FILE_NAME_LENGTH);
+        if (len) {
+            cmd->nn_in = mpp_calloc(char, len + 1);
+            strcpy(cmd->nn_in, next);
+        }
+
+        return 1;
+    }
+
+    mpp_err("nn output file is invalid\n");
+    return 0;
+}
+
 RK_S32 mpi_enc_opt_nn_dect_rect(void *ctx, const char *next)
 {
     MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
@@ -151,6 +171,55 @@ RK_S32 mpi_enc_opt_nn_dect_rect(void *ctx, const char *next)
     }
 
     mpp_err("nn detection rectangle file is invalid\n");
+    return 0;
+}
+
+RK_S32 mpi_enc_opt_cme_out(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        size_t len = strnlen(next, MAX_FILE_NAME_LENGTH);
+        if (len) {
+            cmd->cme_out = mpp_calloc(char, len + 1);
+            strcpy(cmd->cme_out, next);
+        }
+
+        return 1;
+    }
+
+    mpp_err("CME output file is invalid\n");
+    return 0;
+}
+
+RK_S32 mpi_enc_opt_cme_pred_interval(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        cmd->cme_pred_interval = atoi(next);
+        return 1;
+    }
+
+    mpp_err("invalid cme_pred_interval\n");
+    return 0;
+}
+
+RK_S32 mpi_enc_opt_weight(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        size_t len = strnlen(next, MAX_FILE_NAME_LENGTH);
+        if (len) {
+            cmd->weight = mpp_calloc(char, len + 1);
+            strcpy(cmd->weight, next);
+        }
+
+        return 1;
+    }
+
+    mpp_err("weight file is invalid\n");
     return 0;
 }
 
@@ -754,6 +823,19 @@ RK_S32 mpi_enc_opt_soc_id(void *ctx, const char *next)
     return 0;
 }
 
+RK_S32 mpi_enc_opt_rknn_ver(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        cmd->rknn_ver = atoi(next);
+        return 1;
+    }
+
+    mpp_err_f("invalid rknn_ver\n");
+    return 0;
+}
+
 RK_S32 mpi_enc_opt_segmap_calc_en(void *ctx, const char *next)
 {
     MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
@@ -857,6 +939,24 @@ RK_S32 mpi_enc_opt_show_time(void *ctx, const char *next)
     return 0;
 }
 
+RK_S32 mpi_enc_opt_seek(void *ctx, const char *next)
+{
+    MpiEncTestArgs *cmd = (MpiEncTestArgs *)ctx;
+
+    if (next) {
+        RK_S32 val = atoi(next);
+        if (val >= 0) {
+            cmd->seek = val;
+            return 1;
+        }
+        mpp_err("invalid seek value %d, must be >= 0\n", val);
+        return 0;
+    }
+
+    mpp_err("invalid seek frame number\n");
+    return 0;
+}
+
 static MppOptInfo enc_opts[] = {
     {"i",       "input_file",           "input frame file",                         mpi_enc_opt_i},
     {"o",       "output_file",          "output encoded bitstream file",            mpi_enc_opt_o},
@@ -899,13 +999,19 @@ static MppOptInfo enc_opts[] = {
     {"lmdi",    "lambda i idx",         "lambda_idx_i 0~8",                         mpi_enc_opt_lmdi},
     {"rknn",    "rknn file",            "rknn model file",                          mpi_enc_opt_rknn},
     {"nn_out",  "rknn output file",     "rknn output file",                         mpi_enc_opt_nn_out},
+    {"nn_in",   "rknn input file",      "rknn input file",                          mpi_enc_opt_nn_in},
     {"nn_dect_rect",  "rknn rect output file", "rknn rect output file",             mpi_enc_opt_nn_dect_rect},
+    {"cme_out",  "cme output file",      "CME output file",                          mpi_enc_opt_cme_out},
+    {"cme_pred_interval", "cme prediction reset interval", "0=disable prediction, N=reset every N frames with detection",  mpi_enc_opt_cme_pred_interval},
+    {"weight",  "weight file",           "model weight file path",                   mpi_enc_opt_weight},
     {"rt",      "run type",  "run type: 0 jpeg rknn; 1 jpeg rknn mpp; 2 yuv rknn; 3 yuv mpp; 4 yuv rknn mpp",
                                                                                 mpi_enc_opt_run_type},
-    {"soc",     "SoC id",               "0 3576; 1 3588",                           mpi_enc_opt_soc_id},
+    {"soc",     "SoC id",               "0 RK3576; 1 RK3588; 2 RK3572",            mpi_enc_opt_soc_id},
+    {"rknn_ver","rknn version",          "1 RKNN1; 2 RKNN2; 3 RKNN3, default 2",    mpi_enc_opt_rknn_ver},
     {"segmap_calc_en", "segmap_calc_en", "segmap_calc_en, 0:off 1:on",              mpi_enc_opt_segmap_calc_en},
     {"smart_en", "smart_en", "smart_en, 0:off 1:v1 3:v3",                           mpi_enc_opt_smart_en},
     {"show_time", "show_time", "show time, 0, 1, 2",                                mpi_enc_opt_show_time},
+    {"seek",    "seek frame",               "seek input YUV to frame N (N >= 0) before encoding", mpi_enc_opt_seek},
 };
 
 static RK_U32 enc_opt_cnt = MPP_ARRAY_ELEMS(enc_opts);
@@ -1064,7 +1170,10 @@ MPP_RET mpi_enc_test_cmd_put(MpiEncTestArgs* cmd)
     MPP_FREE(cmd->file_cfg);
     MPP_FREE(cmd->model_path);
     MPP_FREE(cmd->nn_out);
+    MPP_FREE(cmd->nn_in);
     MPP_FREE(cmd->nn_dect_rect);
+    MPP_FREE(cmd->cme_out);
+    MPP_FREE(cmd->weight);
     MPP_FREE(cmd);
 
     return MPP_OK;
@@ -1403,23 +1512,6 @@ MPP_RET mpi_enc_gen_osd_data(MppEncOSDData *osd_data, MppBufferGroup group,
     }
 
     osd_data->buf = buf;
-
-    return MPP_OK;
-}
-
-MPP_RET mpi_enc_test_cmd_show_opt(MpiEncTestArgs* cmd)
-{
-    mpp_log("cmd parse result:\n");
-    mpp_log("run type %d (0 jpeg rknn; 1 jpeg rknn mpp; 2 yuv rknn; 3 yuv mpp; 4 yuv rknn mpp)\n", cmd->run_type);
-    mpp_log("input  file name: %s\n", cmd->file_input);
-    mpp_log("output file name: %s\n", cmd->file_output);
-    mpp_log("frames to be encoded: %d\n", cmd->frame_num);
-    mpp_log("width      : %d\n", cmd->width);
-    mpp_log("height     : %d\n", cmd->height);
-    mpp_log("format     : %d\n", cmd->format);
-    mpp_log("type       : %d\n", cmd->type);
-    mpp_log("SoC        : %s\n", cmd->soc_id ? "RK3588" : "RK3576");
-    mpp_log("show_time  : %d\n", cmd->show_time);
 
     return MPP_OK;
 }

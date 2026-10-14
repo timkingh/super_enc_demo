@@ -6,7 +6,10 @@
 #ifndef MPP_SINGLETON_H
 #define MPP_SINGLETON_H
 
-#include "rk_type.h"
+#include "mpp_sgln_base.h"
+
+#define MPP_SGLN_MAX_CNT 64
+#define MPP_SGLN_NO_ID_MAX_CNT 128
 
 typedef enum MppSingletonId_e {
     MPP_SGLN_BASE           = 0,
@@ -24,6 +27,8 @@ typedef enum MppSingletonId_e {
     MPP_SGLN_CLUSTER,
     /* software platform */
     MPP_SGLN_RUNTIME,
+    MPP_SGLN_SYS,
+    MPP_SGLN_RING,
     /* kernel module (MUST before userspace module) */
     MPP_SGLN_KOBJ,
     MPP_SGLN_KMPP_IOC,
@@ -45,44 +50,23 @@ typedef enum MppSingletonId_e {
     MPP_SGLN_PACKET,
     /* userspace system module */
     MPP_SGLN_SYS_CFG,
-    MPP_SGLN_ENC_CFG,
     MPP_SGLN_DEC_CFG,
+    MPP_SGLN_ENC_CFG,
+    MPP_SGLN_ENC_REF_CFG,
     MPP_SGLN_ENC_RC_API,
-    MPP_SGLN_ENC_ARGS,
-
-    /* max count for start init process */
-    MPP_SGLN_MAX_CNT,
 } MppSingletonId;
 
-typedef struct MppSingletonInfo_t {
-    MppSingletonId  id;
-    const char      *name;
-    void            (*init)(void);
-    void            (*deinit)(void);
-} MppSingletonInfo;
-
-#define SNGL_TO_STR(x)  #x
-#define SNGL_TO_FUNC(x) __mpp_singleton_add_##x
-/* warning: constructor priorities from 0 to 100 are reserved for the implementation */
-#define SNGL_BASE_ID    101
 #define MPP_SINGLETON(id, name, init, deinit) \
-    /* increase id from base id to avoid compiler warning */ \
-    __attribute__((constructor(SNGL_BASE_ID + id))) \
-    static void SNGL_TO_FUNC(name)(void) { \
-        MppSingletonInfo info = { \
-            id, \
-            SNGL_TO_STR(name), \
-            init, \
-            deinit, \
-        }; \
-        mpp_singleton_add(&info, __FUNCTION__); \
-    }
+    MPP_SGLN_DEF(mpp_singleton_add, id, name, init, deinit)
+
+#define MPP_MODULE_ADD(name, init, deinit) \
+    MPP_MODULE_DEF(mpp_singleton_add, name, init, deinit)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-rk_s32 mpp_singleton_add(MppSingletonInfo *info, const char *caller);
+rk_s32 mpp_singleton_add(MppSglnInfo *info, const char *caller);
 
 #ifdef __cplusplus
 }
